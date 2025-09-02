@@ -11,8 +11,22 @@ git init
 REM === Tambahkan semua file kecuali yang di-ignore ===
 git add .
 
+REM === Ambil tanggal dan waktu sekarang ===
+for /f "tokens=1-4 delims=/ " %%a in ("%date%") do (
+    set day=%%a
+    set month=%%b
+    set year=%%c
+)
+for /f "tokens=1-2 delims=: " %%a in ("%time%") do (
+    set hour=%%a
+    set minute=%%b
+)
+
+REM === Format commit message ===
+set commitmsg=LAST UPDATE %year%-%month%-%day% %hour%:%minute%
+
 REM === Commit perubahan ===
-git commit -m "Update semua file kecuali folder profile dan file profilepath.txt"
+git commit -m "%commitmsg%"
 
 REM === Set branch utama ===
 git branch -M main
