@@ -1,16 +1,16 @@
+import os
+import time
+import json
+import sys
+import random
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import NoSuchElementException
+from webdriver_manager.chrome import ChromeDriverManager
 
 def url_produk_split(url_produk_split):
-    import os
-    import time
-    import json
-    import sys
-    import random
-    from selenium import webdriver
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.chrome.service import Service
-    from selenium.webdriver.chrome.options import Options
-    from selenium.common.exceptions import NoSuchElementException
-    from webdriver_manager.chrome import ChromeDriverManager
 
     # === Konfigurasi Chrome ===
     profile_path = os.path.abspath("profile/shopee")
@@ -26,6 +26,10 @@ def url_produk_split(url_produk_split):
     chrome_options.add_experimental_option("useAutomationExtension", False)
     chrome_options.add_experimental_option("detach", True)
     sys.stderr = open(os.devnull, "w")
+
+    hiden = 0
+    if hiden == 1:
+        chrome_options.add_argument("--headless=new")  # Mode headless versi baru
 
     # === Inisialisasi Driver ===
     service = Service(ChromeDriverManager().install())
@@ -78,4 +82,46 @@ def url_produk_split(url_produk_split):
             else:
                 break
 
+        # === Replace url_produk dengan url_final di deskripsi.txt ===
+        try:
+            with open("deskripsi.txt", "r", encoding="utf-8") as f:
+                content = f.read()
+
+            # Pastikan URL asli yang dicetak sebelumnya digunakan untuk replace
+            content = content.replace(url_produk, url_final)
+
+            with open("deskripsi.txt", "w", encoding="utf-8") as f:
+                f.write(content)
+
+            print(f"[✔] URL diganti di deskripsi.txt: {url_produk} → {url_final}")
+        except Exception as e:
+            print(f"[❌] Gagal mengganti URL di deskripsi.txt: {e}")
+
+        with open("url_mapping.txt", "a", encoding="utf-8") as log:
+            log.write(f"{url_produk} → {url_final}\n")
+
         print(url_final)
+
+import re
+
+def extract_urls_from_deskripsi(file_path):
+    file_path = 'deskripsi.txt'
+    if not os.path.exists(file_path):
+        print(f"[❌] File tidak ditemukan: {file_path}")
+        return ""
+
+    urls = []
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            found = re.findall(r"https?://\S+", line)
+            urls.extend(found)
+
+    # Gabungkan semua URL jadi satu string tanpa separator
+    return "".join(urls)
+
+# === Contoh penggunaan ===
+if __name__ == "__main__":
+    file_deskripsi = "deskripsi.txt"
+    hasil = extract_urls_from_deskripsi(file_deskripsi)
+    print(f"[✔] URL gabungan:\n{hasil}")

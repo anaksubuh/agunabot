@@ -32,10 +32,75 @@ st.set_page_config(
 
 with st.sidebar:
     st.image('small.gif',width=50)
-    selected = option_menu('Menu', ['Dasboard','Akun','Scrapper','Database','Setting'], icons=['house','book','list','chat','gear'], menu_icon="cast", default_index=0)
+    selected = option_menu('Menu', ['Dasboard','Upload','Akun','Scrapper','Database','Setting'], icons=['house','list','book','list','chat','gear'], menu_icon="cast", default_index=0)
 
 if selected == 'Dasboard':
     pass
+
+elif selected == 'Upload':
+    import json
+    import pandas as pd
+    import os
+
+    st.subheader("📤 Upload ID Berdasarkan Akun")
+
+    # === Load username dari profil_output.txt ===
+    akun_path = "profil_output.txt"
+    akun_data = []
+    if os.path.exists(akun_path):
+        with open(akun_path, "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split("|")
+                if len(parts) >= 2:
+                    akun_data.append(parts[1])  # Ambil username
+    else:
+        st.warning("File profil_output.txt tidak ditemukan.")
+
+    # === Pilih username ===
+    if akun_data:
+        selected_username = st.selectbox("Pilih Username Akun", akun_data)
+    else:
+        selected_username = None
+
+    # === Load ID dari database.json ===
+    id_path = "database.json"
+    id_list = []
+    if os.path.exists(id_path):
+        with open(id_path, "r", encoding="utf-8") as f:
+            try:
+                id_list = json.load(f)
+            except Exception as e:
+                st.error(f"Gagal membaca database.json: {e}")
+    else:
+        st.warning("File database.json tidak ditemukan.")
+
+    # === Pilih ID yang mau di-upload ===
+    if selected_username and id_list:
+        selected_ids = st.multiselect("Pilih ID yang akan di-upload", id_list)
+
+        if st.button("🚀 Antrikan"):
+            if selected_ids:
+                selected_username = selected_username.lstrip('@')
+                st.success(f"{len(selected_ids)} ID akan di-upload untuk akun @{selected_username}")
+
+                # Buat container untuk hasil upload
+                with st.container():
+                    st.markdown("### ✅ ID yang berhasil diantrikan:")
+                    uploaded_list = []
+
+                    with open("upload_log.txt", "a", encoding="utf-8") as log:
+                        for id in selected_ids:
+                            formatted = f"{selected_username}:{id}"
+                            uploaded_list.append(f"- `{formatted}`")
+                            log.write(formatted + "\n")
+
+                    # Tampilkan sebagai bullet list
+                    st.markdown("\n".join(uploaded_list))
+
+            else:
+                st.warning("⚠️ Tidak ada ID yang dipilih untuk di-upload.")
+        elif selected_username:
+            st.info("ℹ️ Belum ada ID yang tersedia untuk di-upload.")
 
 elif selected == 'Akun':
     import pandas as pd
@@ -113,16 +178,26 @@ elif selected == 'Akun':
             st.info("Tidak ada akun untuk dihapus.")
 
 elif selected == 'Scrapper':
-    import converter_url
+    with st.expander("Scraping twitter thread"):
+        st.subheader("🐦 Twitter Thread Scraper")
 
-    st.subheader("🔗 Shopee URL Scraper")
+        twitter_url = st.text_input("Masukkan URL Twitter Thread:")
 
-    user_input = st.text_input("Masukkan URL Shopee:")
+        if st.button("Simpan URL Twitter"):
+            import scraptread
+            scraptread.scraptread(st,twitter_url)
 
-    if st.button("Submit"):
-        st.success(f"URL yang kamu masukkan: {user_input}")
-        # Jalankan fungsi pemrosesan
-        converter_url.url_produk_split(user_input)
+    with st.expander("Scraping shopee thread"):
+        import converter_url
+
+        st.subheader("🔗 Shopee URL Scraper")
+
+        user_input = st.text_input("Masukkan URL Shopee:")
+
+        if st.button("Submit"):
+            st.success(f"URL yang kamu masukkan: {user_input}")
+            # Jalankan fungsi pemrosesan
+            converter_url.url_produk_split(user_input)
 
 elif selected == 'Database':
     st.title("📊 Statistik Scraping Shopee Threads")
@@ -134,12 +209,13 @@ elif selected == 'Database':
     jumlah_scrap = len(data)
     jumlah_produk = sum(len(post["threads"]) for post in data.values())
 
-    # Deteksi URL pendek Shopee dengan regex
+    # Deteksi URL pendek Shopee (dua pola)
     invalid_data = {}
     for post_id, post in data.items():
         urls_pendek = []
         for thread in post["threads"]:
-            found_urls = re.findall(r"https://s\.shopee\.co\.id/\S+", thread["deskripsi"])
+            deskripsi = thread.get("deskripsi", "")
+            found_urls = re.findall(r"https://(?:s\.shopee\.co\.id|shope\.ee)/\S+", deskripsi)
             urls_pendek.extend(found_urls)
         if urls_pendek:
             invalid_data[post_id] = urls_pendek
@@ -177,8 +253,8 @@ elif selected == 'Database':
                     # Replace di data
                     idx = 0
                     for thread in data[post_id]["threads"]:
-                        original_deskripsi = thread["deskripsi"]
-                        found_urls = re.findall(r"https://s\.shopee\.co\.id/\S+", original_deskripsi)
+                        original_deskripsi = thread.get("deskripsi", "")
+                        found_urls = re.findall(r"https://(?:s\.shopee\.co\.id|shope\.ee)/\S+", original_deskripsi)
                         for short_url in found_urls:
                             original_deskripsi = original_deskripsi.replace(short_url, final_urls[idx])
                             idx += 1
@@ -188,7 +264,6 @@ elif selected == 'Database':
                     with open("database.json", "w", encoding="utf-8") as f:
                         json.dump(data, f, indent=2, ensure_ascii=False)
                     st.success("✅ URL berhasil direplace dan disimpan.")
-    pass
 
 elif selected == 'Setting':
     pass

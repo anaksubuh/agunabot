@@ -54,3 +54,5 @@ def ambil_data_dan_print(tweet_id, file_path="database.json"):
 
     except Exception as e:
         print(f"[ERROR] Gagal membaca atau memproses file: {e}")
+
+ambil_data_dan_print("1962128420911104181")
