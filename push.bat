@@ -35,6 +35,9 @@ REM === Tambahkan remote origin ===
 git remote remove origin 2>nul
 git remote add origin https://github.com/anaksubuh/agunabot.git
 
+REM === Tarik perubahan dari remote dulu ===
+git pull origin main --rebase
+
 REM === Push ke GitHub ===
 git push -u origin main
 
