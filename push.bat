@@ -2,6 +2,8 @@
 REM === Setup Git Ignore ===
 echo profile/ > .gitignore
 echo default.txt >> .gitignore
+echo downloaded_images >> .gitignore
+echo __pycache__ >> .gitignore
 
 REM === Inisialisasi Git ===
 git init
